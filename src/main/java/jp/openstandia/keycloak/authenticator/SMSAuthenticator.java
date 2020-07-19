@@ -64,6 +64,8 @@ public class SMSAuthenticator implements Authenticator {
 			try {
 				response = authyUsers.requestSms(authyId);
 				System.out.println(response.getMessage());
+				System.out.println(response.getToken());
+				System.out.println(response.isSuccess());				
 				if (response.isOk()) {
 					Response challenge = context.form().createForm("sms-validation.ftl");
 					context.challenge(challenge);
