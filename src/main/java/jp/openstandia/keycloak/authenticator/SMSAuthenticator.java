@@ -1,6 +1,8 @@
 package jp.openstandia.keycloak.authenticator;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
@@ -60,9 +62,12 @@ public class SMSAuthenticator implements Authenticator {
 			}
 
 			// SendSMS
-			Hash response;
 			try {
-				response = authyUsers.requestSms(authyId);
+		        Map<String, String> options = new HashMap<String, String>();
+		        options.put("force", "true");
+
+		        Hash response = authyUsers.requestSms(authyId, options);
+
 				System.out.println(response.getMessage());
 				System.out.println(response.getToken());
 				System.out.println(response.isSuccess());				
