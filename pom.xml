@@ -15,6 +15,31 @@
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 	</properties>
 
+	<!-- Twilio SDK -->
+	<dependency>
+		<groupId>com.twilio.sdk</groupId>
+		<artifactId>twilio</artifactId>
+		<version>7.54.0</version>
+	</dependency>
+
+	<dependency>
+		<groupId>com.fasterxml.jackson.core</groupId>
+		<artifactId>jackson-core</artifactId>
+		<version>2.9.6</version>
+	</dependency>
+
+	<dependency>
+		<groupId>com.fasterxml.jackson.core</groupId>
+		<artifactId>jackson-annotations</artifactId>
+		<version>2.9.6</version>
+	</dependency>
+
+	<dependency>
+		<groupId>com.fasterxml.jackson.core</groupId>
+		<artifactId>jackson-databind</artifactId>
+		<version>2.9.6</version>
+	</dependency>
+
 	<dependencies>
 		<dependency>
 			<groupId>org.keycloak</groupId>
