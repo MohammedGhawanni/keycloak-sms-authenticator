@@ -1,5 +1,6 @@
+package jp.openstandia.keycloak.authenticator.api;
+
 public interface Params {
-  public Map<String, String> data;
-  public void setAttribute(String key, String value);
-  public String toJSON();
+  void setAttribute(String key, String value);
+  String toJSON();
 }

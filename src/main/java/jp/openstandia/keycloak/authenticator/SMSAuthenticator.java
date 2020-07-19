@@ -18,6 +18,7 @@ import jp.openstandia.keycloak.authenticator.api.AuthyUserParams;
 import jp.openstandia.keycloak.authenticator.api.AuthyUserService;
 import jp.openstandia.keycloak.authenticator.api.SMSSendVerify;
 import com.authy.AuthyApiClient;
+import com.authy.AuthyException;
 import com.authy.api.*;
 
 public class SMSAuthenticator implements Authenticator {
@@ -27,15 +28,15 @@ public class SMSAuthenticator implements Authenticator {
 	public void authenticate(AuthenticationFlowContext context) {
 		logger.debug("Method [authenticate]");
 
-        // Start Authy client & get users
-        AuthyApiClient client = new AuthyApiClient(SMSAuthContstants.AUTHY_API_KEY);
-        Users authyUsers = client.getUsers();
+		// Start Authy client & get users
+		AuthyApiClient client = new AuthyApiClient(SMSAuthContstants.AUTHY_API_KEY);
+		Users authyUsers = client.getUsers();
 
 		AuthenticatorConfigModel config = context.getAuthenticatorConfig();
 
 		UserModel user = context.getUser();
 		String phoneNumber = getPhoneNumber(user);
-		String authyId = null;
+		int authyId = -1;	// if -1 then it's not initialized
 		String email = getEmail(user);
 		logger.debugv("phoneNumber : {0}", phoneNumber);
 		logger.debugv("email : {0}", email);
@@ -44,26 +45,39 @@ public class SMSAuthenticator implements Authenticator {
 		if (phoneNumber != null) {
 
 			// Create Authy user
-			User authyUser = users.createUser(email, phoneNumber, "966");
-			if(authyUser.isOk()){
-                // store authy id
-				authyId = authyUser.getId();
-			} else {
-				System.out.println(user.getError());
+			User authyUser;
+			try {
+				authyUser = authyUsers.createUser(email, phoneNumber, "966");
+				if(authyUser.isOk()){
+					// store authy id
+					authyId = authyUser.getId();
+				} else {
+					System.out.println(authyUser.getError());
+				}
+			} catch (AuthyException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
 			}
 
-            // SendSMS
-            Hash response = users.requestSms(authyId);
-            if (response.isOk()) {
-                Response challenge = context.form().createForm("sms-validation.ftl");
-                context.challenge(challenge);
-                System.out.println(response.getMessage());
-            } else {
-                Response challenge = context.form().addError(new FormMessage("sendSMSCodeErrorMessage"))
-		            .createForm("sms-validation-error.ftl");
-                context.challenge(challenge);
-                System.out.println(response.getError());
-            }
+			// SendSMS
+			Hash response;
+			try {
+				response = authyUsers.requestSms(authyId);
+				if (response.isOk()) {
+					Response challenge = context.form().createForm("sms-validation.ftl");
+					context.challenge(challenge);
+					System.out.println(response.getMessage());
+				} else {
+					Response challenge = context.form().addError(new FormMessage("sendSMSCodeErrorMessage"))
+							.createForm("sms-validation-error.ftl");
+					context.challenge(challenge);
+					System.out.println(response.getError());
+				}
+			} catch (AuthyException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+
 			// SMSSendVerify sendVerify = new SMSSendVerify(getConfigString(config, SMSAuthContstants.CONFIG_SMS_API_KEY),
 			// 		getConfigString(config, SMSAuthContstants.CONFIG_PROXY_FLAG),
 			// 		getConfigString(config, SMSAuthContstants.CONFIG_PROXY_URL),

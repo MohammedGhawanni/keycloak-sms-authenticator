@@ -22,7 +22,6 @@ import javax.net.ssl.HttpsURLConnection;
 
 import org.jboss.logging.Logger;
 
-import jdk.incubator.http.HttpResponse;
 
 
 public class AuthyUserService {
@@ -43,18 +42,18 @@ public class AuthyUserService {
         this.apiKey = apiKey;
     }
     
-    public createAuthyUser(String email, String phoneNumber){
+    public String createAuthyUser(String email, String phoneNumber){
         AuthyUserParams data = new AuthyUserParams();
         data.setAttribute("email", email);
         data.setAttribute("phone_number", phoneNumber);
         data.setAttribute("country_code", "966"); // Saudi Arabia
         data.setAttribute("send_install_link_via_sms", "false"); // don't send Authy app installation link
         
-        return request(METHOD_POST, PHONE_VERIFICATION_API_PATH, data);
+        return createAuthyUserRequest(METHOD_POST, PHONE_VERIFICATION_API_PATH, data);
     }
     
     private String createAuthyUserRequest(String method, String path, Params data) {
-        boolean result = false;
+        String result = "";
         
         HttpsURLConnection conn;
         InputStream in = null;
@@ -72,13 +71,13 @@ public class AuthyUserService {
             httpUrlConnection.setDoOutput(true);
             httpUrlConnection.setRequestProperty("X-Authy-API-Key", apiKey); // API-KEY
             
-            writeJson(conn, data);
+            writeJson(httpUrlConnection, data);
             final int resStatus = httpUrlConnection.getResponseCode();
             logger.infov("RESPONSE STATUS : {0}", resStatus);
             
             if (resStatus == HttpURLConnection.HTTP_OK) {
-                in = conn.getInputStream();
-                CreateUserResponseDTO userResponse = objectMapper.readValue(in, CreateUserResponseDTO.class);
+                in = httpUrlConnection.getInputStream();
+                CreateUserResponseDTO userResponse = mapper.readValue(in, CreateUserResponseDTO.class);
                 reader = new BufferedReader(new InputStreamReader(in, "UTF-8"));
                 
                 String line;
