@@ -15,9 +15,9 @@ import java.net.URL;
 import java.net.URLEncoder;
 import java.util.Map;
 import java.util.Map.Entry;
-import com.twilio.sdk.LookupsClient;
-import com.twilio.sdk.TwilioIPMessagingClient;
-import com.twilio.sdk.TwilioRestClient;
+//import com.twilio.sdk.LookupsClient;
+//import com.twilio.sdk.TwilioIPMessagingClient;
+//import com.twilio.sdk.TwilioRestClient;
 
 import javax.net.ssl.HttpsURLConnection;
 
