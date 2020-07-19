@@ -5,11 +5,11 @@ import java.util.Map;
 
 import org.json.JSONObject;
 
-public class SMSParams implements Params{
+public class AuthyUserParams implements Params {
 
 	private Map<String, String> data;
 
-	public SMSParams() {
+	public AuthyUserParams() {
 		data = new HashMap<String, String>();
 	}
 
@@ -28,4 +28,6 @@ public class SMSParams implements Params{
 		}
 		return json.toString();
 	}
+
+	
 }
