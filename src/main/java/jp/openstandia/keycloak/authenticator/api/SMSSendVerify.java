@@ -15,27 +15,31 @@ import java.net.URL;
 import java.net.URLEncoder;
 import java.util.Map;
 import java.util.Map.Entry;
+import com.twilio.sdk.LookupsClient;
+import com.twilio.sdk.TwilioIPMessagingClient;
+import com.twilio.sdk.TwilioRestClient;
 
 import javax.net.ssl.HttpsURLConnection;
 
 import org.jboss.logging.Logger;
 
 public class SMSSendVerify {
-
+	
+	
 	private static final Logger logger = Logger.getLogger(SMSSendVerify.class.getPackage().getName());
-
+	
 	public static final String DEFAULT_API_URI = "https://api.authy.com";
 	public static final String PHONE_VERIFICATION_API_PATH = "/protected/json/phones/verification/";
-
+	
 	public static final String METHOD_POST = "POST";
 	public static final String METHOD_GET = "GET";
-
+	
 	private final boolean isProxy;
 	private final String proxyUrl;
 	private final String proxyPort;
 	private final String apiKey;
 	private final String codeLen;
-
+	
 	public SMSSendVerify(String apiKey, String isProxy, String proxyUrl, String proxyPort, String codeLen) {
 		this.apiKey = apiKey;
 		this.isProxy = Boolean.parseBoolean(isProxy);
@@ -43,47 +47,47 @@ public class SMSSendVerify {
 		this.proxyPort = proxyPort;
 		this.codeLen = codeLen;
 	}
-
-	public boolean sendSMS(String telNum) {
-
+	
+	public boolean sendSMS(String telNum, String authyId) {
+		
 		SMSParams data = new SMSParams();
 		data.setAttribute("phone_number", telNum);
-		data.setAttribute("country_code", "81"); // JAPAN
+		data.setAttribute("country_code", "966"); // Saudi Arabia
 		data.setAttribute("via", "sms"); // SMS
 		data.setAttribute("code_length", codeLen);
-
+		
 		return request(METHOD_POST, PHONE_VERIFICATION_API_PATH + "start", data);
 	}
-
+	
 	public boolean verifySMS(String telNum, String code) {
-
+		
 		SMSParams data = new SMSParams();
 		data.setAttribute("phone_number", telNum);
-		data.setAttribute("country_code", "81");
+		data.setAttribute("country_code", "966");
 		data.setAttribute("verification_code", code);
 		data.setAttribute("code_length", codeLen);
-
+		
 		return request(METHOD_GET, PHONE_VERIFICATION_API_PATH + "check", data);
 	}
-
-	private boolean request(String method, String path, SMSParams data) {
+	
+	private boolean request(String method, String path, Params data) {
 		boolean result = false;
-
+		
 		HttpsURLConnection conn;
 		InputStream in = null;
 		BufferedReader reader = null;
 		try {
 			StringBuilder sb = new StringBuilder();
-
+			
 			if (method.equals(METHOD_GET)) {
 				sb.append(prepareGet(data));
 			}
-
+			
 			URL url = new URL(DEFAULT_API_URI + path + sb.toString());
-
+			
 			if (isProxy) {
 				Proxy proxy = new Proxy(Proxy.Type.HTTP,
-						new InetSocketAddress(this.proxyUrl, Integer.parseInt(this.proxyPort)));
+				new InetSocketAddress(this.proxyUrl, Integer.parseInt(this.proxyPort)));
 				conn = (HttpsURLConnection) url.openConnection(proxy);
 			} else {
 				conn = (HttpsURLConnection) url.openConnection();
@@ -93,25 +97,25 @@ public class SMSSendVerify {
 			conn.setRequestProperty("Content-Type", "application/json");
 			conn.setDoOutput(true);
 			conn.setRequestProperty("X-Authy-API-Key", apiKey); // API-KEY
-
+			
 			if (method.equals(METHOD_POST)) {
 				writeJson(conn, data);
 			}
-
+			
 			final int resStatus = conn.getResponseCode();
 			logger.infov("RESPONSE STATUS : {0}", resStatus);
-
+			
 			if (resStatus == HttpURLConnection.HTTP_OK) {
 				in = conn.getInputStream();
 				reader = new BufferedReader(new InputStreamReader(in, "UTF-8"));
-
+				
 				String line;
 				while ((line = reader.readLine()) != null) {
 					logger.infov("RESPONSE DETAIL : {0}", line);
 				}
 				result = true;
 			}
-
+			
 		} catch (IOException e) {
 			logger.error(e);
 		} finally {
@@ -130,15 +134,15 @@ public class SMSSendVerify {
 				}
 			}
 		}
-
+		
 		return result;
 	}
-
-	private void writeJson(HttpURLConnection connection, SMSParams data) {
+	
+	private void writeJson(HttpURLConnection connection, Params data) {
 		if (data == null) {
 			return;
 		}
-
+		
 		OutputStream os = null;
 		BufferedWriter output = null;
 		try {
@@ -158,21 +162,21 @@ public class SMSSendVerify {
 				}
 			}
 		}
-
+		
 	}
-
-	public String prepareGet(SMSParams data) {
-
+	
+	public String prepareGet(Params data) {
+		
 		if (data == null)
-			return "";
-
+		return "";
+		
 		StringBuilder sb = new StringBuilder("?");
 		Map<String, String> params = data.toMap();
-
+		
 		boolean first = true;
-
+		
 		for (Entry<String, String> s : params.entrySet()) {
-
+			
 			if (first) {
 				first = false;
 			} else {
@@ -180,12 +184,12 @@ public class SMSSendVerify {
 			}
 			try {
 				sb.append(URLEncoder.encode(s.getKey(), "UTF-8")).append("=")
-						.append(URLEncoder.encode(s.getValue(), "UTF-8"));
+				.append(URLEncoder.encode(s.getValue(), "UTF-8"));
 			} catch (UnsupportedEncodingException e) {
 				logger.error("Encoding not supported" + e.getMessage());
 			}
 		}
-
+		
 		return sb.toString();
 	}
 }

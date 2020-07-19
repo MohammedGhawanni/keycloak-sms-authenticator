@@ -14,7 +14,11 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.FormMessage;
 
+import jp.openstandia.keycloak.authenticator.api.AuthyUserParams;
+import jp.openstandia.keycloak.authenticator.api.AuthyUserService;
 import jp.openstandia.keycloak.authenticator.api.SMSSendVerify;
+import com.authy.AuthyApiClient;
+import com.authy.api.*;
 
 public class SMSAuthenticator implements Authenticator {
 
@@ -23,30 +27,58 @@ public class SMSAuthenticator implements Authenticator {
 	public void authenticate(AuthenticationFlowContext context) {
 		logger.debug("Method [authenticate]");
 
+        // Start Authy client & get users
+        AuthyApiClient client = new AuthyApiClient(SMSAuthContstants.AUTHY_API_KEY);
+        Users authyUsers = client.getUsers();
+
 		AuthenticatorConfigModel config = context.getAuthenticatorConfig();
 
 		UserModel user = context.getUser();
 		String phoneNumber = getPhoneNumber(user);
+		String authyId = null;
+		String email = getEmail(user);
 		logger.debugv("phoneNumber : {0}", phoneNumber);
+		logger.debugv("email : {0}", email);
+
 
 		if (phoneNumber != null) {
 
-			// SendSMS
-			SMSSendVerify sendVerify = new SMSSendVerify(getConfigString(config, SMSAuthContstants.CONFIG_SMS_API_KEY),
-					getConfigString(config, SMSAuthContstants.CONFIG_PROXY_FLAG),
-					getConfigString(config, SMSAuthContstants.CONFIG_PROXY_URL),
-					getConfigString(config, SMSAuthContstants.CONFIG_PROXY_PORT),
-					getConfigString(config, SMSAuthContstants.CONFIG_CODE_LENGTH));
-
-			if (sendVerify.sendSMS(phoneNumber)) {
-				Response challenge = context.form().createForm("sms-validation.ftl");
-				context.challenge(challenge);
-
+			// Create Authy user
+			User authyUser = users.createUser(email, phoneNumber, "966");
+			if(authyUser.isOk()){
+                // store authy id
+				authyId = authyUser.getId();
 			} else {
-				Response challenge = context.form().addError(new FormMessage("sendSMSCodeErrorMessage"))
-						.createForm("sms-validation-error.ftl");
-				context.challenge(challenge);
+				System.out.println(user.getError());
 			}
+
+            // SendSMS
+            Hash response = users.requestSms(authyId);
+            if (response.isOk()) {
+                Response challenge = context.form().createForm("sms-validation.ftl");
+                context.challenge(challenge);
+                System.out.println(response.getMessage());
+            } else {
+                Response challenge = context.form().addError(new FormMessage("sendSMSCodeErrorMessage"))
+		            .createForm("sms-validation-error.ftl");
+                context.challenge(challenge);
+                System.out.println(response.getError());
+            }
+			// SMSSendVerify sendVerify = new SMSSendVerify(getConfigString(config, SMSAuthContstants.CONFIG_SMS_API_KEY),
+			// 		getConfigString(config, SMSAuthContstants.CONFIG_PROXY_FLAG),
+			// 		getConfigString(config, SMSAuthContstants.CONFIG_PROXY_URL),
+			// 		getConfigString(config, SMSAuthContstants.CONFIG_PROXY_PORT),
+			// 		getConfigString(config, SMSAuthContstants.CONFIG_CODE_LENGTH));
+
+			// if (sendVerify.sendSMS(phoneNumber, authyId)) {
+			// 	Response challenge = context.form().createForm("sms-validation.ftl");
+			// 	context.challenge(challenge);
+
+			// } else {
+			// 	Response challenge = context.form().addError(new FormMessage("sendSMSCodeErrorMessage"))
+			// 			.createForm("sms-validation-error.ftl");
+			// 	context.challenge(challenge);
+			// }
 
 		} else {
 			Response challenge = context.form().addError(new FormMessage("missingTelNumberMessage"))
@@ -111,6 +143,14 @@ public class SMSAuthenticator implements Authenticator {
 			return phoneNumberList.get(0);
 		}
 		return null;
+	}
+
+	private String getEmail(UserModel user){
+		List<String> emailList = user.getAttribute(SMSAuthContstants.ATTR_EMAIL);
+		if (emailList != null && !emailList.isEmpty()) {
+			return emailList.get(0);
+		}
+		return "user_email@email.com";
 	}
 
 	private String getConfigString(AuthenticatorConfigModel config, String configName) {
