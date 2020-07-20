@@ -4,3 +4,4 @@ target
 .project
 .classpath
 dependency-reduced-pom.xml
+/src/main/java/jp/openstandia/keycloak/authenticator/SMSAuthConstants.java
