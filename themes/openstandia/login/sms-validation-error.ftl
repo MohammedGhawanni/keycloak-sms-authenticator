@@ -14,7 +14,7 @@
             </div>
         </form>
         <#if client?? && client.baseUrl?has_content>
-            <p><a id="backToApplication" href="${client.baseUrl}">${msg("backToLoginForm")}</a></p>
+            <p><a id="backToApplication" href="${client.baseUrl}">${msg("mobileNumber")}</a></p>
         </#if>
     </#if>
 </@layout.registrationLayout>
