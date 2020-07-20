@@ -33,6 +33,7 @@ public class SMSAuthenticator implements Authenticator {
 		// Start Authy client & get users
 		AuthyApiClient client = new AuthyApiClient(SMSAuthContstants.AUTHY_API_KEY);
 		Users authyUsers = client.getUsers();
+		
 
 		AuthenticatorConfigModel config = context.getAuthenticatorConfig();
 
@@ -68,14 +69,14 @@ public class SMSAuthenticator implements Authenticator {
 
 		        Hash response = authyUsers.requestSms(authyId, options);
 
-				System.out.println(response.getMessage());
-				System.out.println(response.getToken());
-				System.out.println(response.isSuccess());				
-				if (response.isOk()) {
-					Response challenge = context.form().createForm("sms-validation.ftl");
-					context.challenge(challenge);
-					System.out.println(response.getMessage());
-				} else {
+						System.out.println(response.getMessage());
+						System.out.println(response.getToken());
+						System.out.println(response.isSuccess());				
+						if (response.isOk()) {
+								Response challenge = context.form().createForm("sms-validation.ftl");
+								context.challenge(challenge);
+								System.out.println(response.getMessage());
+						} else {
 					Response challenge = context.form().addError(new FormMessage("sendSMSCodeErrorMessage"))
 							.createForm("sms-validation-error.ftl");
 					context.challenge(challenge);
